@@ -361,6 +361,7 @@ def shade(ray, hit, scene, lights, depth=0):
     for i in lights:
         sum += (i.illuminate(ray, hit, scene))
 
+    # refraction
     if hit.material.di:
         d = normalize(ray.direction)
         n = hit.normal
