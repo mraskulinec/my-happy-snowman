@@ -36,7 +36,7 @@ class Ray:
 
 class Material:
 
-    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None):
+    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None, di=False, n=1, a=None):
         """Create a new material with the given parameters.
 
         Parameters:
@@ -45,12 +45,17 @@ class Material:
           p : float -- the specular exponent
           k_m : (3,) or float -- the mirror reflection coefficient
           k_a : (3,) -- the ambient coefficient (defaults to match diffuse color)
+          n : float -- the refractive index
+          a : float -- attenuation constant
         """
         self.k_d = k_d
         self.k_s = k_s
         self.p = p
         self.k_m = k_m
         self.k_a = k_a if k_a is not None else k_d
+        self.n = n
+        self.di = di
+        self.a = a
 
 
 class Hit:
@@ -325,6 +330,14 @@ class Scene:
 MAX_DEPTH = 4
 
 
+def refract(d, n, nt):
+    tir = 1 - (1-np.dot(d, n)**2)/(nt**2)
+    if tir < 0:
+        return (False, np.array([0., 0., 0.]))
+    else:
+        return (True, (d-n*np.dot(d, n))/nt - n*np.sqrt(tir))
+
+
 def shade(ray, hit, scene, lights, depth=0):
     """Compute shading for a ray-surface intersection.
 
@@ -348,12 +361,49 @@ def shade(ray, hit, scene, lights, depth=0):
     for i in lights:
         sum += (i.illuminate(ray, hit, scene))
 
-    d = ray.direction
-    n = hit.normal
-    r = d - 2*np.dot(d, n)*n
-    new_ray = Ray(hit.point, r, 5e-5, np.inf)
-    p = scene.intersect(new_ray)
-    return sum + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
+    if hit.material.di:
+        d = normalize(ray.direction)
+        n = hit.normal
+        r = d - 2*np.dot(d, n)*n
+        c = 0
+        k = 0
+        nt = hit.material.n
+        if np.dot(d, n) < 0:
+            t = refract(d, n, nt)
+            c = -np.dot(d, n)
+            k = np.array([1., 1., 1.])
+        else:
+            time = 0  # should be time in object?
+            # k = e**(-a*time)
+            k = 0.5  # temporary
+            result = refract(d, -n, 1/nt)
+            t = result[1]
+            if result[0]:
+                c = np.dot(t, n)
+            else:
+                new_ray = Ray(hit.point, t, 5e-5, np.inf)
+                p = scene.intersect(new_ray)
+                return k*shade(new_ray, p, scene, lights, depth+1)
+
+            ref_i = ((nt-1)**2)/((nt+1)**2)
+            ref = ref_i + (1-ref_i)*((1-c)**5)
+            ref_ray = Ray(hit.point, r, 5e-5, np.inf)
+            ref_p = scene.intersect(ref_ray)
+            ref_color = shade(ref_ray, ref_p, scene, lights, depth+1)
+
+            trans_ray = Ray(hit.point, t, 5e-5, np.inf)
+            trans_p = scene.intersect(trans_ray)
+            trans_color = shade(trans_ray, trans_p, scene, lights, depth+1)
+
+            return k(ref*ref_color+(1-ref)*trans_color)
+
+    # d = ray.direction
+    # n = hit.normal
+    # r = d - 2*np.dot(d, n)*n
+    # new_ray = Ray(hit.point, r, 5e-5, np.inf)
+    # p = scene.intersect(new_ray)
+    return sum
+    # + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
 
 
 def render_image(camera, scene, lights, nx, ny):
