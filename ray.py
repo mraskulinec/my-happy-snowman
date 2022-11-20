@@ -370,13 +370,11 @@ def shade(ray, hit, scene, lights, depth=0):
         k = 0
         nt = hit.material.n
         if np.dot(d, n) < 0:
-            t = refract(d, n, nt)
+            t = refract(d, n, nt)[1]
             c = -np.dot(d, n)
             k = np.array([1., 1., 1.])
         else:
-            time = 0  # should be time in object?
-            # k = e**(-a*time)
-            k = 0.5  # temporary
+            k = e**(-hit.material.a*hit.t)
             result = refract(d, -n, 1/nt)
             t = result[1]
             if result[0]:
@@ -386,25 +384,25 @@ def shade(ray, hit, scene, lights, depth=0):
                 p = scene.intersect(new_ray)
                 return k*shade(new_ray, p, scene, lights, depth+1)
 
-            ref_i = ((nt-1)**2)/((nt+1)**2)
-            ref = ref_i + (1-ref_i)*((1-c)**5)
-            ref_ray = Ray(hit.point, r, 5e-5, np.inf)
-            ref_p = scene.intersect(ref_ray)
-            ref_color = shade(ref_ray, ref_p, scene, lights, depth+1)
+        ref_i = ((nt-1)**2)/((nt+1)**2)
+        ref = ref_i + (1-ref_i)*((1-c)**5)
+        ref_ray = Ray(hit.point, r, 5e-5, np.inf)
+        ref_p = scene.intersect(ref_ray)
+        ref_color = shade(ref_ray, ref_p, scene, lights, depth+1)
 
-            trans_ray = Ray(hit.point, t, 5e-5, np.inf)
-            trans_p = scene.intersect(trans_ray)
-            trans_color = shade(trans_ray, trans_p, scene, lights, depth+1)
-
-            return k(ref*ref_color+(1-ref)*trans_color)
-
-    # d = ray.direction
-    # n = hit.normal
-    # r = d - 2*np.dot(d, n)*n
-    # new_ray = Ray(hit.point, r, 5e-5, np.inf)
-    # p = scene.intersect(new_ray)
+        trans_ray = Ray(hit.point, t, 5e-5, np.inf)
+        trans_p = scene.intersect(trans_ray)
+        trans_color = shade(trans_ray, trans_p, scene, lights, depth+1)
+        return k*(ref*ref_color+(1-ref)*trans_color)
+    # else:
+    #     # mirror reflection
+    #     d = ray.direction
+    #     n = hit.normal
+    #     r = d - 2*np.dot(d, n)*n
+    #     new_ray = Ray(hit.point, r, 5e-5, np.inf)
+    #     p = scene.intersect(new_ray)
+    #     return sum + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
     return sum
-    # + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
 
 
 def render_image(camera, scene, lights, nx, ny):

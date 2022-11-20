@@ -2,8 +2,9 @@ from utils import *
 from ray import *
 from cli import render
 
-x = np.log(0.5)
-a = np.array([x, x, x])
+# x = np.log(10)
+# a = np.array([x, x, x])
+a = np.log(np.array([0.4, 0.4, 0.2])**(-1))
 tan = Material(vec([0.4, 0.4, 0.2]), k_s=0.3, p=90,
                k_m=0.3, di=True, n=1.5, a=a)
 blue = Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
