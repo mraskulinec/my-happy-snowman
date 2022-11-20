@@ -2,6 +2,17 @@ from utils import *
 from ray import *
 from cli import render
 
+"""
+STILL TODO: 
+
+1. make the tree look better / add a cone primitive
+2. add more details to the snowman
+3. make a crescent moon in the nightsky
+4. add some cube-shaped "presents" around the tree
+5. add christmas ornaments to the tree
+
+"""
+
 # x = np.log(10)
 # a = np.array([x, x, x])
 a = np.log(np.array([0.4, 0.4, 0.2])**(-1))
