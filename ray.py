@@ -137,6 +137,7 @@ class Sphere:
         new_ray = ray
         ec = new_ray.origin - self.center
         d = ray.direction
+        print(d)
         r = self.radius
         discriminant = np.dot(d, ec)**2-np.dot(d, d)*(np.dot(ec, ec)-r**2)
         t = 0
@@ -164,6 +165,75 @@ class Sphere:
         pc = point - self.center
         normal = normalize(pc)
         # normal = normalize(np.transpose(np.linalg.inv(self.m))@normal)
+        return Hit(t, point, normal, self.material)
+
+
+class Cone:
+
+    def __init__(self, c, v, theta, h,  material) -> None:
+        """Create a cone from the given circle center with radius r and height h.
+
+        Parameters:
+          c : (3,) -- the coordinate of the tip of the cone.
+          v : (3,) -- a unit vector representing the cone's axis in the direction of increasing radius.
+          theta : float -- half-angle between the cone's axis and surface.
+          h : float -- height of the cone from base to tip.
+          material : Material -- the material of the surface.
+        """
+        self.c = c
+        self.v = v
+        self.theta = theta
+        self.h = h
+        self.material = material
+
+      # For ray-cone intersection formula, look here:
+      # https://lousodrome.net/blog/light/2017/01/03/intersection-of-a-ray-and-a-cone/#:~:text=If%20%2C%20the%20ray%20is%20intersecting,%E2%88%92%20b%20%2B%20%CE%94%202%20a%20.
+
+    def intersect(self, ray):
+        """Computes the interesection between a ray and this cone, if it exists.
+
+        Parameters:
+          ray : Ray -- the ray to intersect with this cone
+        Return:
+          Hit -- the hit data
+        """
+        d = ray.direction
+        oc = ray.origin-self.c
+        a = np.dot(d, self.v)**2 - cos(self.theta)**2
+        b = 2*(np.dot(d, self.v)*np.dot((oc), self.v) -
+               np.dot(oc, d)*(cos(self.theta)**2))
+        c = (np.dot(oc, self.v)**2) - np.dot(oc, oc)*(cos(self.theta)**2)
+        discriminant = b**2 - 4*a*c
+        t = 0
+        if discriminant <= 0:
+            return no_hit
+        else:
+            t1 = (-b + sqrt(discriminant))/(2*a)
+            t2 = (-b - sqrt(discriminant))/(2*a)
+            t1_out = t1 <= ray.start or t1 >= ray.end
+            t2_out = t2 <= ray.start or t2 >= ray.end
+
+            point1 = ray.origin + t1*d
+            point2 = ray.origin + t2*d
+            proj1 = np.dot(point1-c, self.v)*self.v/np.dot(self.v, self.v)
+            proj2 = np.dot(point2-c, self.v)*self.v/np.dot(self.v, self.v)
+            height1 = sqrt(np.dot(proj1, proj1))
+            height2 = sqrt(np.dot(proj2, proj2))
+
+            t1_out = t1_out and (height1 <= self.h)
+            t2_out = t2_out and (height2 <= self.h)
+
+            if t1_out and t2_out:
+                return no_hit
+            elif t1_out:
+                t = t2
+            elif t2_out:
+                t = t1
+            else:
+                t = min(t1, t2)
+        point = ray.origin + t*d
+        tangent = np.cross(point-self.c, self.v)
+        normal = normalize(np.cross(point-self.c, tangent))
         return Hit(t, point, normal, self.material)
 
 

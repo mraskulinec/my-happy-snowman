@@ -2,6 +2,7 @@ from utils import *
 from ray import *
 from cli import render
 from PIL import Image
+import math
 
 load_img_path = './cube.png'
 img = Image.open(load_img_path)
@@ -22,6 +23,7 @@ scene = Scene([
     Sphere(vec([-0.7, 0, 0]), 0.5, tan),
     Sphere(vec([0.7, 0, 0]), 0.5, blue),
     Sphere(vec([0, -40, 0]), 39.5, gray),
+    Cone(vec([3, 3, 3]), vec([0, 0, -1]), math.pi/16, 3, tan),
 ])
 
 lights = [
