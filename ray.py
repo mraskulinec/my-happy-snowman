@@ -1,6 +1,7 @@
 import numpy as np
 from math import *
 from utils import *
+import random
 
 """
 Core implementation of the ray tracer.  This module contains the classes (Sphere, Mesh, etc.)
@@ -79,6 +80,26 @@ class Hit:
 no_hit = Hit(np.inf)
 
 
+# def homogenous(x):
+#     return np.array([x[0], x[1], x[2], 1])
+
+
+# def non_homogenous(x):
+#     return np.array([x[0], x[1], x[2]])
+
+
+# def homogenous3(x):
+#     col = np.array([[0.], [0.], [0.]])
+#     row = np.array([0, 0, 0, 1])
+#     m = np.append(x, col, 1)
+#     m = np.append(m, row, 0)
+#     return m
+
+
+# def homogenize(x):
+#     return x / x[3]
+
+
 class Sphere:
 
     def __init__(self, center, radius, material):
@@ -102,7 +123,19 @@ class Sphere:
           Hit -- the hit data
         """
         # TODO A4 implement this function
-        ec = ray.origin - self.center
+        # (x, y, z) = (self.center)
+        # to_center = np.array(
+        #     [[1, 0, 0, -x], [0, 1, 0, -y], [0, 0, 1, -z], [0, 0, 0, 1]])
+        # away_center = np.array(
+        #     [[1, 0, 0, x], [0, 1, 0, y], [0, 0, 1, z], [0, 0, 0, 1]])
+        # new_m = homogenous3(self.m)
+        # transform = away_center @ (new_m @ to_center)
+
+        # m_inv = np.linalg.inv(self.m)
+        # new_ray = Ray(m_inv @ ray.origin, m_inv @
+        #               ray.direction, ray.start, ray.end)
+        new_ray = ray
+        ec = new_ray.origin - self.center
         d = ray.direction
         r = self.radius
         discriminant = np.dot(d, ec)**2-np.dot(d, d)*(np.dot(ec, ec)-r**2)
@@ -117,8 +150,8 @@ class Sphere:
         else:
             t1 = (-np.dot(d, ec)+sqrt(discriminant))/np.dot(d, d)
             t2 = (-np.dot(d, ec)-sqrt(discriminant))/np.dot(d, d)
-            t1_out = t1 <= ray.start or t1 >= ray.end
-            t2_out = t2 <= ray.start or t2 >= ray.end
+            t1_out = t1 <= new_ray.start or t1 >= new_ray.end
+            t2_out = t2 <= new_ray.start or t2 >= new_ray.end
             if t1_out and t2_out:
                 return no_hit
             elif t1_out:
@@ -130,6 +163,7 @@ class Sphere:
         point = ray.origin + t*d
         pc = point - self.center
         normal = normalize(pc)
+        # normal = normalize(np.transpose(np.linalg.inv(self.m))@normal)
         return Hit(t, point, normal, self.material)
 
 
@@ -154,6 +188,9 @@ class Triangle:
           Hit -- the hit data
         """
         # TODO A4 implement this function
+        # m_inv = np.linalg.inv(self.m)
+        # ray = Ray(m_inv @ ray.origin, m_inv @
+        #           ray.direction, ray.start, ray.end)
         a = self.vs[0, 0] - self.vs[1, 0]
         b = self.vs[0, 1] - self.vs[1, 1]
         c = self.vs[0, 2] - self.vs[1, 2]
@@ -180,6 +217,7 @@ class Triangle:
 
         point = ray.origin + t*ray.direction
         normal = np.cross(self.vs[1]-self.vs[0], self.vs[2]-self.vs[0])
+        # normal = normalize(np.transpose(np.linalg.inv(self.m))@normal)
         return Hit(t, point, normal, self.material)
 
 
@@ -420,8 +458,14 @@ def render_image(camera, scene, lights, nx, ny):
     img = np.zeros((ny, nx, 3), np.float32)
     for i in range(img.shape[0]):
         for j in range(img.shape[1]):
-            z = np.array([j, i])
-            r = camera.generate_ray(np.array([j/nx, i/ny]))
-            p = scene.intersect(r)
-            img[i, j] = shade(r, p, scene, lights)
+            c = 0
+            n = 2
+            for p in range(n):
+                for q in range(n):
+                    e = random.random()
+                    z = np.array([(j+(p+e)/n)/nx, (i+(p+e)/n)/ny])
+                    r = camera.generate_ray(z)
+                    point = scene.intersect(r)
+                    c += shade(r, point, scene, lights)
+            img[i, j] = c/(n**2)
     return img
