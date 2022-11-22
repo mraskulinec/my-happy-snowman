@@ -216,11 +216,12 @@ class Cone:
             t2 = (-b - sqrt(discriminant))/(2*a)
             t1_out = (t1 <= ray.start) or (t1 >= ray.end)
             t2_out = (t2 <= ray.start) or (t2 >= ray.end)
-
             point1 = ray.origin + t1*d
             point2 = ray.origin + t2*d
-            proj1 = np.dot(point1-c, self.v)*self.v/np.dot(self.v, self.v)
-            proj2 = np.dot(point2-c, self.v)*self.v/np.dot(self.v, self.v)
+            proj1 = np.dot(point1-self.c, self.v)*self.v / \
+                sqrt(np.dot(self.v, self.v))
+            proj2 = np.dot(point2-self.c, self.v)*self.v / \
+                sqrt(np.dot(self.v, self.v))
             height1 = sqrt(np.dot(proj1, proj1))
             height2 = sqrt(np.dot(proj2, proj2))
 
@@ -235,7 +236,6 @@ class Cone:
             else:
                 t = min(t1, t2)
         point = ray.origin + t*d
-        t = 0.001
         tangent = np.cross(point-self.c, self.v)
         normal = normalize(np.cross(point-self.c, tangent))
         return Hit(t, point, normal, self.material)
@@ -361,17 +361,17 @@ class PointLight:
         """
         # Compute Diffuse Lighting
         im = hit.material.img
-        # if im is None:
-        k_d = hit.material.k_d
-        # else:
-        #     # only for spheres
-        #     (x, y, z) = hit.point - hit.surf.center
-        #     i = (pi + atan2(y, x))/(2*pi)
-        #     radius = sqrt(x**2 + y**2 + z**2)
-        #     j = (pi - acos(z/radius))/pi
-        #     img_i = int(i * im.shape[0])
-        #     img_j = int(j * im.shape[1])
-        #     k_d = im[img_i, img_j]
+        if im is None:
+            k_d = hit.material.k_d
+        else:
+            # only for spheres
+            (x, y, z) = hit.point - hit.surf.center
+            i = (pi + atan2(y, x))/(2*pi)
+            radius = sqrt(x**2 + y**2 + z**2)
+            j = (pi - acos(z/radius))/pi
+            img_i = int(i * im.shape[0])
+            img_j = int(j * im.shape[1])
+            k_d = im[img_i, img_j]/255
         dist = self.position-hit.point
         r_sq = np.dot(dist, dist)
         l = normalize(dist)
@@ -394,12 +394,6 @@ class PointLight:
         if blocked:
             return np.array([0., 0., 0.])
         else:
-            # print("testttttt")
-            # print(k_d)
-            # print(k_d[0])
-            # if hit.t == 0.001:
-            #     print("test")
-            #     print(k_d)
             return k_d * max(0, np.dot(n, l)) * i + k_s * (max(0, np.dot(n, h)) ** p) * i
 
 
@@ -425,7 +419,18 @@ class AmbientLight:
           (3,) -- the light reflected from the surface
         """
         # TODO A4 implement this function
-        return hit.material.k_a*self.intensity
+        im = hit.material.img
+        k_a = hit.material.k_a
+        if im is not None:
+            # only for spheres
+            (x, y, z) = hit.point - hit.surf.center
+            i = (pi + atan2(y, x))/(2*pi)
+            radius = sqrt(x**2 + y**2 + z**2)
+            j = (pi - acos(z/radius))/pi
+            img_i = int(i * im.shape[0])
+            img_j = int(j * im.shape[1])
+            k_a = im[img_i, img_j]/255
+        return k_a*self.intensity
 
 
 class Scene:
@@ -552,11 +557,11 @@ def render_image(camera, scene, lights, nx, ny):
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
     for i in range(img.shape[0]):
-        if i % 2 == 0:
+        if False:
             img[i, :] = np.array([0., 0., 0.])
         else:
             for j in range(img.shape[1]):
-                if j % 2 == 0:
+                if True:
                     c = 0
                     n = 1
                     for p in range(n):
