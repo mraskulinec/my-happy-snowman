@@ -37,7 +37,7 @@ class Ray:
 
 class Material:
 
-    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None, di=False, n=1, a=None):
+    def __init__(self, k_d, k_s=0., p=20., k_m=0., k_a=None, di=False, n=1, a=None, img=None):
         """Create a new material with the given parameters.
 
         Parameters:
@@ -57,11 +57,12 @@ class Material:
         self.n = n
         self.di = di
         self.a = a
+        self.img = img
 
 
 class Hit:
 
-    def __init__(self, t, point=None, normal=None, material=None):
+    def __init__(self, t, point=None, normal=None, material=None, surf=None):
         """Create a Hit with the given data.
 
         Parameters:
@@ -74,6 +75,7 @@ class Hit:
         self.point = point
         self.normal = normal
         self.material = material
+        self.surf = surf
 
 
 # Value to represent absence of an intersection
@@ -113,6 +115,9 @@ class Sphere:
         self.center = center
         self.radius = radius
         self.material = material
+
+    def texture(self):
+        print("test")
 
     def intersect(self, ray):
         """Computes the first (smallest t) intersection between a ray and this sphere.
@@ -164,7 +169,7 @@ class Sphere:
         pc = point - self.center
         normal = normalize(pc)
         # normal = normalize(np.transpose(np.linalg.inv(self.m))@normal)
-        return Hit(t, point, normal, self.material)
+        return Hit(t, point, normal, self.material, self)
 
 
 class Triangle:
@@ -281,11 +286,23 @@ class PointLight:
           ray : Ray -- the ray that hit the surface
           hit : Hit -- the hit data
           scene : Scene -- the scene, for shadow rays
+          surf : the surface that the hit is on
         Return:
           (3,) -- the light reflected from the surface
         """
         # Compute Diffuse Lighting
-        k_d = hit.material.k_d
+        im = hit.material.img
+        if im is None:
+            k_d = hit.material.k_d
+        else:
+          # only for spheres
+            (x, y, z) = hit.point - hit.surf.center
+            i = (pi + atan2(y, x))/(2*pi)
+            radius = sqrt(x**2 + y**2 + z**2)
+            j = (pi - acos(z/radius))/pi
+            img_i = int(i * im.shape[0])
+            img_j = int(j * im.shape[1])
+            k_d = im[img_i, img_j]
         dist = self.position-hit.point
         r_sq = np.dot(dist, dist)
         l = normalize(dist)
@@ -328,6 +345,7 @@ class AmbientLight:
           ray : Ray -- the ray that hit the surface
           hit : Hit -- the hit data
           scene : Scene -- the scene, for shadow rays
+          surf : the surface that the hit is on
         Return:
           (3,) -- the light reflected from the surface
         """
@@ -353,7 +371,7 @@ class Scene:
         Parameters:
           ray : Ray -- the ray to intersect with the scene
         Return:
-          Hit -- the hit data
+          Hit, surf -- the hit data and the surface
         """
         intersections = []
         for i in self.surfs:
@@ -384,6 +402,7 @@ def shade(ray, hit, scene, lights, depth=0):
       hit : Hit -- the hit data
       scene : Scene -- the scene
       lights : [PointLight or AmbientLight] -- the lights
+      surf : the surface that the hit is on
       depth : int -- the recursion depth so far
     Return:
       (3,) -- the color seen along this ray
@@ -439,7 +458,7 @@ def shade(ray, hit, scene, lights, depth=0):
     #     r = d - 2*np.dot(d, n)*n
     #     new_ray = Ray(hit.point, r, 5e-5, np.inf)
     #     p = scene.intersect(new_ray)
-    #     return sum + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
+    #     return sum + hit.material.k_m*shade(new_ray, p, scene, lights, surf, depth+1)
     return sum
 
 
