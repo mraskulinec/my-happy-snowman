@@ -224,8 +224,8 @@ class Cone:
             height1 = sqrt(np.dot(proj1, proj1))
             height2 = sqrt(np.dot(proj2, proj2))
 
-            t1_out = t1_out or (height1 <= self.h)
-            t2_out = t2_out or (height2 <= self.h)
+            t1_out = t1_out or (height1 >= self.h)
+            t2_out = t2_out or (height2 >= self.h)
             if t1_out and t2_out:
                 return no_hit
             elif t1_out:
@@ -235,6 +235,7 @@ class Cone:
             else:
                 t = min(t1, t2)
         point = ray.origin + t*d
+        t = 0.001
         tangent = np.cross(point-self.c, self.v)
         normal = normalize(np.cross(point-self.c, tangent))
         return Hit(t, point, normal, self.material)
@@ -360,17 +361,17 @@ class PointLight:
         """
         # Compute Diffuse Lighting
         im = hit.material.img
-        if im is None:
-            k_d = hit.material.k_d
-        else:
-            # only for spheres
-            (x, y, z) = hit.point - hit.surf.center
-            i = (pi + atan2(y, x))/(2*pi)
-            radius = sqrt(x**2 + y**2 + z**2)
-            j = (pi - acos(z/radius))/pi
-            img_i = int(i * im.shape[0])
-            img_j = int(j * im.shape[1])
-            k_d = im[img_i, img_j]
+        # if im is None:
+        k_d = hit.material.k_d
+        # else:
+        #     # only for spheres
+        #     (x, y, z) = hit.point - hit.surf.center
+        #     i = (pi + atan2(y, x))/(2*pi)
+        #     radius = sqrt(x**2 + y**2 + z**2)
+        #     j = (pi - acos(z/radius))/pi
+        #     img_i = int(i * im.shape[0])
+        #     img_j = int(j * im.shape[1])
+        #     k_d = im[img_i, img_j]
         dist = self.position-hit.point
         r_sq = np.dot(dist, dist)
         l = normalize(dist)
@@ -393,6 +394,12 @@ class PointLight:
         if blocked:
             return np.array([0., 0., 0.])
         else:
+            # print("testttttt")
+            # print(k_d)
+            # print(k_d[0])
+            # if hit.t == 0.001:
+            #     print("test")
+            #     print(k_d)
             return k_d * max(0, np.dot(n, l)) * i + k_s * (max(0, np.dot(n, h)) ** p) * i
 
 
@@ -488,10 +495,7 @@ def shade(ray, hit, scene, lights, depth=0):
 
     # refraction
     if hit.material.di:
-        if (ray.direction[0] == 0.0) and (ray.direction[1] == 0.0) and (ray.direction[2] == 0.0):
-            print("test2")
-            print(ray.direction)
-        d = (ray.direction)  # can't normalize because sometimes is 0
+        d = normalize(ray.direction)
         n = hit.normal
         r = d - 2*np.dot(d, n)*n
         c = 0
@@ -530,7 +534,7 @@ def shade(ray, hit, scene, lights, depth=0):
     #     r = d - 2*np.dot(d, n)*n
     #     new_ray = Ray(hit.point, r, 5e-5, np.inf)
     #     p = scene.intersect(new_ray)
-    #     return sum + hit.material.k_m*shade(new_ray, p, scene, lights, surf, depth+1)
+    #     return sum + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
     return sum
 
 
@@ -548,18 +552,21 @@ def render_image(camera, scene, lights, nx, ny):
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
     for i in range(img.shape[0]):
-        print(i)
-        for j in range(img.shape[1]):
-            c = 0
-            n = 2
-            for p in range(n):
-                for q in range(n):
-                    e = random.random()
-                    z = np.array([(j+(p+e)/n)/nx, (i+(p+e)/n)/ny])
-                    r = camera.generate_ray(z)
-                    point = scene.intersect(r)
-                    if (r.direction[0] == 0.0) and (r.direction[1] == 0.0) and (r.direction[2] == 0.0):
-                        print("test1")
-                    c += shade(r, point, scene, lights)
-            img[i, j] = c/(n**2)
+        if i % 2 == 0:
+            img[i, :] = np.array([0., 0., 0.])
+        else:
+            for j in range(img.shape[1]):
+                if j % 2 == 0:
+                    c = 0
+                    n = 1
+                    for p in range(n):
+                        for q in range(n):
+                            e = random.random()
+                            z = np.array([(j+(p+e)/n)/nx, (i+(p+e)/n)/ny])
+                            r = camera.generate_ray(z)
+                            point = scene.intersect(r)
+                            c += shade(r, point, scene, lights)
+                    img[i, j] = c/(n**2)
+                else:
+                    img[i, j] = np.array([0., 0., 0.])
     return img
