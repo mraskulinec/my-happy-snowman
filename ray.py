@@ -214,8 +214,8 @@ class Cone:
         else:
             t1 = (-b + sqrt(discriminant))/(2*a)
             t2 = (-b - sqrt(discriminant))/(2*a)
-            t1_out = t1 <= ray.start or t1 >= ray.end
-            t2_out = t2 <= ray.start or t2 >= ray.end
+            t1_out = (t1 <= ray.start) or (t1 >= ray.end)
+            t2_out = (t2 <= ray.start) or (t2 >= ray.end)
 
             point1 = ray.origin + t1*d
             point2 = ray.origin + t2*d
@@ -224,9 +224,8 @@ class Cone:
             height1 = sqrt(np.dot(proj1, proj1))
             height2 = sqrt(np.dot(proj2, proj2))
 
-            t1_out = t1_out and (height1 <= self.h)
-            t2_out = t2_out and (height2 <= self.h)
-
+            t1_out = t1_out or (height1 <= self.h)
+            t2_out = t2_out or (height2 <= self.h)
             if t1_out and t2_out:
                 return no_hit
             elif t1_out:
@@ -364,7 +363,7 @@ class PointLight:
         if im is None:
             k_d = hit.material.k_d
         else:
-          # only for spheres
+            # only for spheres
             (x, y, z) = hit.point - hit.surf.center
             i = (pi + atan2(y, x))/(2*pi)
             radius = sqrt(x**2 + y**2 + z**2)
@@ -503,6 +502,7 @@ def shade(ray, hit, scene, lights, depth=0):
             c = -np.dot(d, n)
             k = np.array([1., 1., 1.])
         else:
+            # some values of k are inf? (negative t)
             k = e**(-hit.material.a*hit.t)
             result = refract(d, -n, 1/nt)
             t = result[1]
@@ -511,10 +511,6 @@ def shade(ray, hit, scene, lights, depth=0):
             else:
                 new_ray = Ray(hit.point, t, 5e-5, np.inf)
                 p = scene.intersect(new_ray)
-                # print(k)
-                # third value of k is infinity
-                if (hit.t == inf):
-                    print("test")
                 return k*shade(new_ray, p, scene, lights, depth+1)
 
         ref_i = ((nt-1)**2)/((nt+1)**2)
@@ -552,6 +548,7 @@ def render_image(camera, scene, lights, nx, ny):
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
     for i in range(img.shape[0]):
+        print(i)
         for j in range(img.shape[1]):
             c = 0
             n = 2
