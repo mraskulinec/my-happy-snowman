@@ -442,8 +442,6 @@ class Scene:
         Return:
           Hit, surf -- the hit data and the surface
         """
-        if isnan(ray.direction[0]):
-            print("failure2")
         intersections = []
         for i in self.surfs:
             intersections.append(i.intersect(ray))
@@ -491,7 +489,10 @@ def shade(ray, hit, scene, lights, depth=0):
 
     # refraction
     if hit.material.di:
-        d = normalize(ray.direction)
+        if (ray.direction[0] == 0.0) and (ray.direction[1] == 0.0) and (ray.direction[2] == 0.0):
+            print("test2")
+            print(ray.direction)
+        d = (ray.direction)  # can't normalize because sometimes is 0
         n = hit.normal
         r = d - 2*np.dot(d, n)*n
         c = 0
@@ -510,6 +511,10 @@ def shade(ray, hit, scene, lights, depth=0):
             else:
                 new_ray = Ray(hit.point, t, 5e-5, np.inf)
                 p = scene.intersect(new_ray)
+                # print(k)
+                # third value of k is infinity
+                if (hit.t == inf):
+                    print("test")
                 return k*shade(new_ray, p, scene, lights, depth+1)
 
         ref_i = ((nt-1)**2)/((nt+1)**2)
@@ -555,9 +560,9 @@ def render_image(camera, scene, lights, nx, ny):
                     e = random.random()
                     z = np.array([(j+(p+e)/n)/nx, (i+(p+e)/n)/ny])
                     r = camera.generate_ray(z)
-                    if isnan(r.direction[0]):
-                        print("failure1")
                     point = scene.intersect(r)
+                    if (r.direction[0] == 0.0) and (r.direction[1] == 0.0) and (r.direction[2] == 0.0):
+                        print("test1")
                     c += shade(r, point, scene, lights)
             img[i, j] = c/(n**2)
     return img
