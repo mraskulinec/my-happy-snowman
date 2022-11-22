@@ -142,7 +142,6 @@ class Sphere:
         new_ray = ray
         ec = new_ray.origin - self.center
         d = ray.direction
-        print(d)
         r = self.radius
         discriminant = np.dot(d, ec)**2-np.dot(d, d)*(np.dot(ec, ec)-r**2)
         t = 0
@@ -175,7 +174,7 @@ class Sphere:
 
 class Cone:
 
-    def __init__(self, c, v, theta, h,  material) -> None:
+    def __init__(self, c, v, theta, h,  material):
         """Create a cone from the given circle center with radius r and height h.
 
         Parameters:
@@ -443,6 +442,8 @@ class Scene:
         Return:
           Hit, surf -- the hit data and the surface
         """
+        if isnan(ray.direction[0]):
+            print("failure2")
         intersections = []
         for i in self.surfs:
             intersections.append(i.intersect(ray))
@@ -554,6 +555,8 @@ def render_image(camera, scene, lights, nx, ny):
                     e = random.random()
                     z = np.array([(j+(p+e)/n)/nx, (i+(p+e)/n)/ny])
                     r = camera.generate_ray(z)
+                    if isnan(r.direction[0]):
+                        print("failure1")
                     point = scene.intersect(r)
                     c += shade(r, point, scene, lights)
             img[i, j] = c/(n**2)
