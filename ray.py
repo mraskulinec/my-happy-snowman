@@ -203,10 +203,11 @@ class Cone:
         """
         d = ray.direction
         oc = ray.origin-self.c
-        a = np.dot(d, self.v)**2 - cos(self.theta)**2
-        b = 2*(np.dot(d, self.v)*np.dot((oc), self.v) -
+        v = normalize(self.v)
+        a = np.dot(d, v)**2 - cos(self.theta)**2
+        b = 2*(np.dot(d, v)*np.dot((oc), v) -
                np.dot(oc, d)*(cos(self.theta)**2))
-        c = (np.dot(oc, self.v)**2) - np.dot(oc, oc)*(cos(self.theta)**2)
+        c = (np.dot(oc, v)**2) - np.dot(oc, oc)*(cos(self.theta)**2)
         discriminant = b**2 - 4*a*c
         t = 0
         if discriminant <= 0:
@@ -218,15 +219,11 @@ class Cone:
             t2_out = (t2 <= ray.start) or (t2 >= ray.end)
             point1 = ray.origin + t1*d
             point2 = ray.origin + t2*d
-            proj1 = np.dot(point1-self.c, self.v)*self.v / \
-                sqrt(np.dot(self.v, self.v))
-            proj2 = np.dot(point2-self.c, self.v)*self.v / \
-                sqrt(np.dot(self.v, self.v))
-            height1 = sqrt(np.dot(proj1, proj1))
-            height2 = sqrt(np.dot(proj2, proj2))
-
-            t1_out = t1_out or (height1 >= self.h)
-            t2_out = t2_out or (height2 >= self.h)
+            limit = self.h / cos(self.theta)
+            height1 = sqrt(np.dot(point1-self.c, point1-self.c))
+            height2 = sqrt(np.dot(point2-self.c, point2-self.c))
+            t1_out = t1_out or (height1 >= limit)
+            t2_out = t2_out or (height2 >= limit)
             if t1_out and t2_out:
                 return no_hit
             elif t1_out:
@@ -236,7 +233,7 @@ class Cone:
             else:
                 t = min(t1, t2)
         point = ray.origin + t*d
-        tangent = np.cross(point-self.c, self.v)
+        tangent = np.cross(point-self.c, v)
         normal = normalize(np.cross(point-self.c, tangent))
         return Hit(t, point, normal, self.material)
 
@@ -458,6 +455,7 @@ class Scene:
             intersections.append(i.intersect(ray))
         smallest = no_hit
         for i in intersections:
+            # print(i.t)
             if i.t < smallest.t:
                 smallest = i
         return smallest
