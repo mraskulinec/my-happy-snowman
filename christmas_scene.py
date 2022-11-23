@@ -1,6 +1,7 @@
 from utils import *
 from ray import *
 from cli import render
+from PIL import Image
 
 """
 STILL TODO: 
@@ -12,12 +13,13 @@ STILL TODO:
 5. add christmas ornaments to the tree
 
 """
+load_img_path = './ornament.png'
+img = Image.open(load_img_path)
+im = np.array(img)
 
-# x = np.log(10)
-# a = np.array([x, x, x])
 a = np.log(np.array([0.4, 0.4, 0.2])**(-1))
-tan = Material(vec([0.4, 0.4, 0.2]), k_s=0.3, p=90,
-               k_m=0.3, di=True, n=1.5, a=a)
+crystal = Material(vec([0.4, 0.4, 0.2]), k_s=0.3, p=90,
+                   k_m=0.3, di=True, n=1.5, a=a)
 blue = Material(vec([0.2, 0.2, 0.5]), k_m=0.5)
 gray = Material(vec([0.2, 0.2, 0.2]), k_m=0.4)
 red = Material(vec([0.8, 0.2, 0.2]), k_m=0.5)
@@ -26,12 +28,19 @@ tree = Material(vec([0.01, 0.1, 0.01]), k_m=0.5)
 brown = Material(vec([0.1, 0.1, 0.1]), k_m=0.5)
 gold = Material(vec([.5, .5, 0.1]), k_m=0.5)
 snow = Material(vec([1, 1, 1.5]), k_m=0.5)
+sparkle_red = Material(vec([0.2, 0.2, 0.2]), k_m=0.5, img=im)
 
 scene = Scene([
-    # Christmas balls - let's make them more shiny/mirror-like
-    # Sphere(vec([-4, -0.3, -1]), 0.2, red),
-    # Sphere(vec([0.7, 0, 0]), 0.2, red),
-    # Sphere(vec([-0.7, 0, 0]), 0.2, green),
+    # Christmas balls
+    Sphere(vec([-.9, -0.4, -0.4]), 0.1, sparkle_red),
+    Sphere(vec([-.8, -0.1, -.4]), 0.1, crystal),
+    Sphere(vec([-0.6, 0.1, -.7]), 0.1, sparkle_red),
+    Sphere(vec([-0.8, 0.3, -.3]), 0.1, crystal),
+    Sphere(vec([-0.7, 0.4, -.7]), 0.1, sparkle_red),
+    Sphere(vec([-0.5, 0.6, -.7]), 0.1, crystal),
+    Sphere(vec([-0.3, -0.5, -.5]), 0.1, sparkle_red),
+    Sphere(vec([-0.9, 0.8, -1]), 0.1, sparkle_red),
+    # Sphere(vec([0.1, 0.7, 0]), 0.1, crystal),
 
     # Snowman :)
     Sphere(vec([1, -0.8, 0]), 0.2, snow),
@@ -42,7 +51,7 @@ scene = Scene([
     Sphere(vec([1.05, -0.275, 0.05]), 0.01, brown),
 
     # Moon
-    Sphere(vec([-50, 200, -100]), 25, gold),  # not visible rn :(
+    Sphere(vec([-10, 0, -30]), 1, gold),  # not visible rn :(
 
     # Tree Code
     Sphere(vec([-1, -0.7, -1]), 0.3, brown),
@@ -74,7 +83,9 @@ scene = Scene([
 
 lights = [
     PointLight(vec([12, 10, 5]), vec([100, 100, 100])),
-    AmbientLight(0.005),
+    PointLight(vec([-40, 10, -5]), vec([200, 200, 200])),
+    PointLight(vec([-10, 0, -30]), vec([1000000000, 1000000000, 1000000000])),
+    AmbientLight(0.05),
 ]
 
 camera = Camera(vec([3, 1.2, 5]), target=vec(

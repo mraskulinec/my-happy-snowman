@@ -555,11 +555,11 @@ def render_image(camera, scene, lights, nx, ny):
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
     for i in range(img.shape[0]):
-        if False:
+        if i % 2 == 0:
             img[i, :] = np.array([0., 0., 0.])
         else:
             for j in range(img.shape[1]):
-                if True:
+                if j % 2 == 0:
                     c = 0
                     n = 1
                     for p in range(n):
