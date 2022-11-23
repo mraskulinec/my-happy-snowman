@@ -82,26 +82,6 @@ class Hit:
 no_hit = Hit(np.inf)
 
 
-# def homogenous(x):
-#     return np.array([x[0], x[1], x[2], 1])
-
-
-# def non_homogenous(x):
-#     return np.array([x[0], x[1], x[2]])
-
-
-# def homogenous3(x):
-#     col = np.array([[0.], [0.], [0.]])
-#     row = np.array([0, 0, 0, 1])
-#     m = np.append(x, col, 1)
-#     m = np.append(m, row, 0)
-#     return m
-
-
-# def homogenize(x):
-#     return x / x[3]
-
-
 class Sphere:
 
     def __init__(self, center, radius, material):
@@ -530,15 +510,14 @@ def shade(ray, hit, scene, lights, depth=0):
         trans_p = scene.intersect(trans_ray)
         trans_color = shade(trans_ray, trans_p, scene, lights, depth+1)
         return k*(ref*ref_color+(1-ref)*trans_color)
-    # else:
-    #     # mirror reflection
-    #     d = ray.direction
-    #     n = hit.normal
-    #     r = d - 2*np.dot(d, n)*n
-    #     new_ray = Ray(hit.point, r, 5e-5, np.inf)
-    #     p = scene.intersect(new_ray)
-    #     return sum + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
-    return sum
+    else:
+        # mirror reflection
+        d = ray.direction
+        n = hit.normal
+        r = d - 2*np.dot(d, n)*n
+        new_ray = Ray(hit.point, r, 5e-5, np.inf)
+        p = scene.intersect(new_ray)
+        return sum + hit.material.k_m*shade(new_ray, p, scene, lights, depth+1)
 
 
 def render_image(camera, scene, lights, nx, ny):
@@ -555,13 +534,14 @@ def render_image(camera, scene, lights, nx, ny):
     # TODO A4 implement this function
     img = np.zeros((ny, nx, 3), np.float32)
     for i in range(img.shape[0]):
-        if i % 2 == 0:
+        print(i)
+        if False:
             img[i, :] = np.array([0., 0., 0.])
         else:
             for j in range(img.shape[1]):
-                if j % 2 == 0:
+                if True:
                     c = 0
-                    n = 1
+                    n = 2
                     for p in range(n):
                         for q in range(n):
                             e = random.random()
